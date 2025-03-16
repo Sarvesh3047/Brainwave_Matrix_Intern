@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expense Tracker</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            animation: fadeIn 1s ease-in;
+            background: url('https://source.unsplash.com/1600x900/?finance,money') no-repeat center center/cover;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        header h1 {
+            font-size: 36px;
+            font-weight: bold;
+            color: white;
+            background: linear-gradient(to right, #4CAF50, #2196F3);
+            padding: 15px 30px;
+            border-radius: 10px;
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+            display: inline-block;
+            margin-top: 20px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .input-section {
+    background: rgba(255, 255, 255, 0.8);
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    margin-top: 20px;
+    width: 90%;
+}
+
+.input-section input {
+    padding: 10px;
+    border: 2px solid #4CAF50;
+    border-radius: 5px;
+    font-size: 16px;
+    outline: none;
+}
+
+.input-section button {
+    background: linear-gradient(to right, #4CAF50, #2196F3);
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: 0.3s;
+}
+
+.input-section button:hover {
+    background: linear-gradient(to right, #45a049, #1e88e5);
+}
+
+
+
+        .container {
+            width: 90%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+    animation: fadeIn 1s ease-in;
+    background: linear-gradient(to right, #4CAF50, #2196F3);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.container {
+    width: 90%;
+    max-width: 800px;
+    background: rgba(255, 255, 255, 0.9); 
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+
+        .expense-list {
+            width: 100%;
+            padding: 10px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.8);
+        }
+
+        table {
+            width: 100%;
+            margin: 20px auto;
+            border-collapse: collapse;
+            border: 2px solid black;
+        }
+
+        th, td {
+            border: 1px solid black;
+            padding: 8px;
+        }
+
+        .totals {
+            width: 100%;
+            padding: 10px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.8);
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+        }
+
+        .totals span {
+            margin: 5px 20px;
+        }
+
+        .chart-container {
+            width: 50%;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Expense Tracker</h1>
+    </header>
+    
+    <section class="input-section">
+        <input type="text" id="expense-name" placeholder="Expense Name">
+        <input type="number" id="expense-amount" placeholder="Amount">
+        <input type="date" id="expense-date">
+        <button onclick="addExpense()">Add Expense</button>
+    </section>
+    
+    <div class="container">
+        <section class="expense-list">
+            <h2>Expenses</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Sr No</th>
+                        <th>Date</th>
+                        <th>Expense Name</th>
+                        <th>Amount (₹)</th>
+                    </tr>
+                </thead>
+                <tbody id="expense-table-body">
+                </tbody>
+            </table>
+            <div class="totals">
+                <span>Daily Total: ₹<span id="daily-total">0</span></span>
+                <span>Monthly Total: ₹<span id="monthly-total">0</span></span>
+                <span>Yearly Total: ₹<span id="yearly-total">0</span></span>
+                <span>Total: ₹<span id="total-amount">0</span></span>
+            </div>
+        </section>
+    
+        <div class="chart-container">
+            <h2>Expense Distribution</h2>
+            <canvas id="expenseChart"></canvas>
+        </div>
+    </div>
+    
+    <script>
+        var ctx = document.getElementById('expenseChart').getContext('2d');
+        var expenseMap = {};
+        var totalExpenses = 0;
+        var dailyTotal = 0;
+        var monthlyTotal = 0;
+        var yearlyTotal = 0;
+
+        var expenseChart = new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: [],
+                datasets: [{
+                    data: [],
+                    backgroundColor: ['red', 'blue', 'green', 'yellow', 'purple']
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { display: true },
+                    tooltip: { enabled: true }
+                }
+            }
+        });
+
+        function updateChart() {
+            expenseChart.data.labels = Object.keys(expenseMap);
+            expenseChart.data.datasets[0].data = Object.values(expenseMap);
+            expenseChart.update();
+        }
+
+        function updateTotals() {
+            document.getElementById('daily-total').innerText = dailyTotal;
+            document.getElementById('monthly-total').innerText = monthlyTotal;
+            document.getElementById('yearly-total').innerText = yearlyTotal;
+            document.getElementById('total-amount').innerText = totalExpenses;
+        }
+
+        function addExpense() {
+            let name = document.getElementById('expense-name').value;
+            let amount = parseFloat(document.getElementById('expense-amount').value);
+            let date = new Date(document.getElementById('expense-date').value);
+            let table = document.getElementById('expense-table-body');
+            let rowCount = table.rows.length + 1;
+            
+            if (name === "" || isNaN(amount) || isNaN(date.getTime())) {
+                alert("Please fill all fields.");
+                return;
+            }
+            
+            let newRow = table.insertRow();
+            newRow.insertCell(0).innerText = rowCount;
+            newRow.insertCell(1).innerText = date.toISOString().split('T')[0];
+            newRow.insertCell(2).innerText = name;
+            newRow.insertCell(3).innerText = "₹" + amount;
+            
+            if (expenseMap[name]) {
+                expenseMap[name] += amount;
+            } else {
+                expenseMap[name] = amount;
+            }
+            
+            totalExpenses += amount;
+            let today = new Date();
+            if (date.toDateString() === today.toDateString()) {
+                dailyTotal += amount;
+            }
+            if (date.getMonth() === today.getMonth() && date.getFullYear() === today.getFullYear()) {
+                monthlyTotal += amount;
+            }
+            if (date.getFullYear() === today.getFullYear()) {
+                yearlyTotal += amount;
+            }
+            
+            updateChart();
+            updateTotals();
+        }
+    </script>
+</body>
+</html>
